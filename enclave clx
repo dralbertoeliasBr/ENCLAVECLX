@@ -1,0 +1,539 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+ENCLAVE BUNKER DOCA — Sistema Operacional Pessoal Soberano
+Implementação Base: 2 Motores + 4 Slots + Arquivista + Farol
+
+Plataforma: Pythonista no iPhone
+Status: Código Base Funcional
+Data: 15 de Julho de 2026
+
+Estrutura:
+  Motor 1: VOX (Voz local)
+  
+  
+  SLOT 1: VOX_INPUT (Captura)
+ 
+  SLOT 4: ROTA (Destino)
+  
+  Background: ArquivistIA + Farol Inclusor
+
+Tudo offline. Nada sai sem assinatura.
+"""
+
+import os
+import re
+import json
+import hashlib
+import hmac
+import time
+import threading
+import unicodedata
+from datetime import datetime, timedelta
+from pathlib import Path
+
+# Imports opcionais (graceful fallback)
+try:
+    import speech
+    SPEECH_AVAILABLE = True
+except:
+    SPEECH_AVAILABLE = False
+
+try:
+    import ui
+    UI_AVAILABLE = True
+except:
+    UI_AVAILABLE = False
+
+# ============================================================================
+# CONFIG GLOBAL
+# ============================================================================
+
+DNA = "DNA-ARQUITETO-2026-SOUNAVY-ENCLAVE"
+JANELA_STOPGO = 45  # minutos
+VERSION = "1.0"
+
+# ============================================================================
+# MOTOR 1: VOX (Voz Local)
+# ============================================================================
+
+class Motor1_VOX:
+    """Captura, transcreve, limpa áudio em PT-
+            self.ultima_transcricao = texto
+            return texto
+        except Exception as e:
+            print("[VOX] ❌ Erro ao capturar: {}".format(str(e)))
+            return None
+    
+    def limpar(self, texto):
+        """Remove ruído (palavras de preenchimento, repetições)."""
+        if not texto:
+            return None
+        
+        # Remove palavras de ruído
+        pattern = r"\b({0})\b".format("|".join(self.RUIDO_PALAVRAS))
+        limpo = re.sub(pattern, "", texto, flags=re.IGNORECASE)
+        
+        # Remove espaços múltiplos
+        limpo = re.sub(r"\s+", " ", limpo).strip()
+        
+        # Primeira letra maiúscula
+        limpo = limpo[0].upper() + limpo[1:] if limpo else ""
+        
+        return limpo
+    
+    def processar(self, texto_raw):
+        """Pipeline completo: captura → limpa → hash."""
+        if not texto_raw:
+            return None
+        
+        texto_limpo = self.limpar(texto_raw)
+        if not texto_limpo:
+            return None
+        
+        hash_sha = hashlib.sha256(texto_limpo.encode()).hexdigest()
+        
+        resultado = {
+            "raw": texto_raw,
+            "clean": texto_limpo,
+            "hash": hash_sha,
+            "ts": datetime.now().isoformat(),
+            "confidence": 0.95,  # Placeholder
+            "motor": "VOX_1",
+        }
+        
+        return resultado
+
+# ============================================================================
+# MOTOR 2: LLM (Processamento Inteligente)
+# ============================================================================
+
+class Motor2_LLM:
+    """Raciocínio e decisão (via Llama/Phi offline ou mock)."""
+    
+    def __init__(self, usar_mock=True):
+        self.usar_mock = usar_mock
+        self.chave_secreta = DNA.encode()
+    
+    def processar(self, texto_vox, contexto=None):
+        """Processa texto do VOX e retorna raciocínio + resposta."""
+        if not texto_vox:
+            return None
+        
+        # CLX: Categoriza tipo
+        tipo = self._categorizar_tipo(texto_vox)
+        
+        # DABT: Avalia sinais
+        dabt_state = self._avaliar_dabt(texto_vox)
+        
+        # Raciocínio (em modo mock, muito simplificado)
+        raciocinio = self._raciocinar(texto_vox, tipo, dabt_state)
+        
+        # Resposta
+        resposta = self._gerar_resposta(tipo, dabt_state)
+        
+        # Assina tudo
+        conteudo_bytes = resposta.encode()
+        hmac_sig = hmac.new(self.chave_secreta, conteudo_bytes, hashlib.sha256).hexdigest()
+        
+        resultado = {
+            "input": texto_vox,
+            "tipo": tipo,
+            "dabt_state": dabt_state,
+            "reasoning": raciocinio,
+            "response": resposta,
+            "hmac": hmac_sig,
+            "ts": datetime.now().isoformat(),
+            "motor": "LLM_2",
+        }
+        
+        return resultado
+    
+        
+        # Simplificado: conta palavras positivas vs negativas
+        positivas = len(re.findall(r"(bom|ótimo|sim|correto)", t_lower))
+        negativas = len(re.findall(r"(não|ruim|errado|péssimo)", t_lower))
+        
+        score = positivas - (negativas * 1.8)
+        
+        
+        ]
+        return passos
+    
+    def _gerar_resposta(self, tipo, dabt_state):
+        """Gera resposta básica."""
+        if tipo == "ARQUIVAR":
+            return "Registrado para arquivamento em Box Verde"
+        elif tipo == "ESCREVER":
+            return "Anotado como pedido de escrita"
+        elif tipo == "FOTO":
+            return "Registrado pedido sobre fotos"
+        elif tipo == "DESENHO":
+            return "Registrado pedido de desenho"
+        else:
+            return "Processado e armazenado"
+
+# ============================================================================
+# SLOT 1: VOX_INPUT
+# ============================================================================
+
+class 
+        
+        # Processa
+        self.output = self.motor_vox.processar(audio_bruto)
+        return self.output
+
+# ============================================================================
+# SLOT 2: LLM_PROCESS
+# ============================================================================
+
+class Slot2_LLM_PROCESS:
+    """Zona de transformação: Texto limpo → Decisão + Resposta."""
+    
+    def __init__(self, motor_llm):
+        self.motor_llm = motor_llm
+        self.output = None
+    
+    def executar(self, entrada_vox):
+        """Roda o LLM."""
+        if not entrada_vox or not entrada_vox.get("clean"):
+            return None
+        
+        # Processa
+        self.output = self.motor_llm.processar(entrada_vox["clean"])
+        return self.output
+
+# ============================================================================
+# SLOT 3: COMPRESSAO
+# ============================================================================
+
+class Slot3_COMPRESSAO:
+    """Zona de transformação: Dados brutos → Comprimidos + Nomeados."""
+    
+    def __init__(self):
+        self.output = None
+    
+    def _slug_semantico(self, texto, max_len=28):
+        """Gera nome determinístico a partir do conteúdo."""
+        
+    def executar(self, entrada_llm):
+        """Comprime e nomeia."""
+        if not entrada_llm:
+            return None
+        
+        resposta = entrada_llm.get("response", "")
+        titulo = self._slug_semantico(resposta)
+        
+        # Calcula compressão simulada
+        tamanho_original = len(json.dumps(entrada_llm, ensure_ascii=False).encode())
+        tamanho_comprimido = int(tamanho_original * 0.7)  # Simula 30% compressão
+        
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        hash_curto = entrada_llm.get("hmac", "")[:10]
+        nome_arquivo = "{}_{}_{}.json".format(ts, titulo, hash_curto)
+        
+        self.output = {
+            "nome": nome_arquivo,
+            "titulo": titulo,
+            "conteudo": entrada_llm,
+            "tamanho_original": tamanho_original,
+            "tamanho_comprimido": tamanho_comprimido,
+            "compression_ratio": round(tamanho_comprimido / tamanho_original, 2),
+            "ts": ts,
+        }
+        
+        return self.output
+
+# ============================================================================
+# SLOT 4: ROTA
+# ============================================================================
+
+class Slot4_ROTA:
+    """Zona de transformação: Dados comprimidos → Destino final (DOCA)."""
+    
+    def __init__(self, janela_minutos=45):
+        self.buffer_stopgo = {}
+        self.janela = janela_minutos
+        self.output = None
+    
+    def _avaliar_stopgo(self, hash_texto):
+        """Stop&Go: bloqueia repetição dentro de janela."""
+        agora = datetime.now()
+     
+
+
+        self.buffer_stopgo[hash_texto] = agora
+        return {"acao": "GO"}
+    
+    def executar(self, entrada_compressao):
+        """Decide rota final + aplica Stop&Go."""
+        if not entrada_compressao:
+            return None
+        
+        conteudo = entrada_compressao.get("conteudo", {})
+        hash_hmac = conteudo.get("hmac", "")[:16]
+        
+        # Stop&Go
+        decisao_stopgo = self._avaliar_stopgo(hash_hmac)
+        if decisao_stopgo["acao"] == "STOP":
+            print("[ROTA] 🛑 STOP — Repetição bloqueada por {} min".format(
+                decisao_stopgo["minutos_restantes"]))
+            return None
+        
+        # Decide box baseado em tipo
+        tipo = conteudo.get("tipo", "GENERICO")
+        if tipo == "ARQUIVAR":
+            box = "01"
+        elif tipo == "ESCREVER":
+            box = "02"
+        elif tipo == "FOTO":
+            box = "03"
+        elif tipo == "DESENHO":
+            box = "03"
+        else:
+            box = "04"
+        
+        self.output = {
+            "acao": "GO",
+            "box": box,
+            "tipo": tipo,
+            "arquivo": entrada_compressao.get("nome"),
+            "verificado": True,
+            "hmac": hash_hmac,
+        }
+        
+        return self.output
+
+# ============================================================================
+# DOCA — Armazenamento Soberano
+# ============================================================================
+
+class DOCA:
+    """Bunker de armazenamento local com integridade verificada."""
+    
+    def __init__(self):
+        self.base = os.path.expanduser("~/Documents/ENCLAVE_DOCA")
+        self.index_path = os.path.join(self.base, "_index.json")
+        self.manifesto_path = os.path.join(self.base, "_manifesto.log")
+        self.index = {}
+        self._inicializar()
+        self._carregar_index()
+    
+    def _inicializar(self):
+        """Cria estrutura de pastas."""
+        os.makedirs(self.base, exist_ok=True)
+        
+        # Cria Boxes
+        for i in range(1, 9):
+            box_dir = os.path.join(self.base, "BOX_{:02d}".format(i))
+            os.makedirs(box_dir, exist_ok=True)
+    
+    def _carregar_index(self):
+        """Carrega índice de arquivos."""
+        if os.path.exists(self.index_path):
+            try:
+                with open(self.index_path, "r", encoding="utf-8") as f:
+                    self.index = json.load(f)
+            except:
+                self.index = {}
+    
+    def _salvar_index(self):
+        """Salva índice."""
+        with open(self.index_path, "w", encoding="utf-8") as f:
+            json.dump(self.index, f, indent=2, ensure_ascii=False)
+    
+    def _log(self, evento):
+        """Registra evento em manifesto."""
+        with open(self.manifesto_path, "a", encoding="utf-8") as f:
+            f.write("[{}] {}\n".format(datetime.now().isoformat(), evento))
+    
+    def guardar(self, box, nome_arquivo, conteudo):
+        """Armazena arquivo com verificação."""
+        box_dir = os.path.join(self.base, "BOX_{:02d}".format(int(box)))
+        caminho = os.path.join(box_dir, nome_arquivo)
+        
+        # Serializa conteúdo
+        if isinstance(conteudo, dict):
+            conteudo_str = json.dumps(conteudo, indent=2, ensure_ascii=False)
+        else:
+            conteudo_str = str(conteudo)
+        
+        # Calcula hash
+        hash_conteudo = hashlib.sha256(conteudo_str.encode()).hexdigest()
+        
+        # Armazena
+        try:
+            with open(caminho, "w", encoding="utf-8") as f:
+                f.write(conteudo_str)
+            
+            # Atualiza index
+            self.index[hash_conteudo] = {
+                "arquivo": nome_arquivo,
+                "box": box,
+                "caminho": caminho,
+                "ts": datetime.now().isoformat(),
+                "tamanho": os.path.getsize(caminho),
+            }
+            
+            self._salvar_index()
+            self._log("✅ GUARDADO | Box: {} | Arquivo: {} | Hash: {}".format(
+                box, nome_arquivo, hash_conteudo[:12]))
+            
+            return {"ok": True, "hash": hash_conteudo, "caminho": caminho}
+        
+        except Exception as e:
+            self._log("❌ ERRO | {}".format(str(e)))
+            return {"ok": False, "erro": str(e)}
+
+# ============================================================================
+# ARQUIVISTA IA (Background)
+# ============================================================================
+
+class ArquivistaIA:
+    """Agente de catalogação contínua (background)."""
+    
+    def __init__(self, doca):
+        self.doca = doca
+        self.rodando = False
+    
+    def catalogar(self):
+        """Cataloga arquivos do DOCA."""
+        print("[ARQUIVISTA] 📚 Catalogando...")
+        
+        contagem = {}
+        for hash_val, meta in self.doca.index.items():
+            box = meta.get("box", "?")
+            contagem[box] = contagem.get(box, 0) + 1
+        
+        resultado = {
+            "total": len(self.doca.index),
+            "por_box": contagem,
+            "ts": datetime.now().isoformat(),
+        }
+        
+        self.doca._log("CATALOGO: {}".format(json.dumps(resultado)))
+        return resultado
+    
+    def start(self):
+        """Inicia background thread."""
+        self.rodando = True
+        
+        def loop():
+            while self.rodando:
+                time.sleep(300)  # 5 minutos
+                self.catalogar()
+        
+        thread = threading.Thread(target=loop, daemon=True)
+        thread.start()
+        print("[ARQUIVISTA] 🟢 Iniciado em background")
+
+# ============================================================================
+# FAROL 
+# ============================================================================
+
+class 
+            v = ui.View(frame=(0, 0, 375, 812))
+            v.background_color = "#111"
+            
+            bolinha = ui.View(frame=(320, 700, 26, 26))
+            bolinha.background_color = "#00d4aa"
+            bolinha.corner_radius = 13
+            bolinha.alpha = 0.6
+            v.add_subview(bolinha)
+            
+            label = ui.Label(frame=(20, 100, 335, 60))
+            label.
+            v.add_subview(label)
+            
+            v.present("sheet", hide_title_bar=True)
+        except:
+            pass
+
+# ============================================================================
+# ORQUESTRADOR PRINCIPAL
+# ============================================================================
+
+class ENCLAVE:
+    """Orquestrador do sistema completo."""
+    
+    def __init__(self):
+        print("\n[ENCLAVE] Inicializando...")
+        
+        # Motores
+        self.motor1_vox = Motor1_VOX()
+        self.motor2_llm = Motor2_LLM(usar_mock=True)
+        
+        # Slots
+        self.slot1_vox_input = Slot1_VOX_INPUT(self.motor1_vox)
+        self.slot2_llm_process = Slot2_LLM_PROCESS(self.motor2_llm)
+        self.slot3_compressao = Slot3_COMPRESSAO()
+        self.slot4_rota = Slot4_ROTA(janela_minutos=45)
+        
+        # 
+            print("[ENCLAVE] ❌ Falha em Slot 1")
+            return None
+        print("[ENCLAVE]   ✅ Clean: '{}'".format(saida_slot1.get("clean", "")[:40]))
+        
+        # SLOT 2: LLM
+        print("[ENCLAVE] → SLOT 2: LLM_PROCESS")
+        saida_slot2 = self.slot2_llm_process.executar(saida_slot1)
+        if not saida_slot2:
+            print("[ENCLAVE] ❌ Falha em Slot 2")
+            return None
+        print("[ENCLAVE]   ✅ Tipo: {} | DABT: {}".format(
+            saida_slot2.get("tipo"), saida_slot2.get("dabt_state")))
+        
+        # SLOT 3: Compressão
+        print("[ENCLAVE] → SLOT 3: COMPRESSAO")
+        saida_slot3 = self.slot3_compressao.executar(saida_slot2)
+        if not saida_slot3:
+            print("[ENCLAVE] ❌ Falha em Slot 3")
+            return None
+        print("[ENCLAVE]   ✅ Arquivo: {} | Compressão: {}%".format(
+            saida_slot3.get("nome"), int((1 - saida_slot3.get("compression_ratio", 0.7)) * 100)))
+        
+        # SLOT 4: 
+        print("[ENCLAVE]   ✅ Box: {} | Ação: {}".format(
+            saida_slot4.get("box"), saida_slot4.get("acao")))
+        
+        # DOCA: Armazena
+        print("[ENCLAVE] → 
+        )
+        
+        if resultado_doca["ok"]:
+            print("[ENCLAVE]   ✅ Guardado com sucesso")
+            print("[ENCLAVE]   📍 Caminho: {}".format(resultado_doca["caminho"]))
+        else:
+            print("[ENCLAVE]   ❌ Erro ao guardar: {}".format(resultado_doca["erro"]))
+        
+        return resultado_doca
+    
+    def 
+        print("\n[ENCLAVE] Pronto! Escolha:")
+        print("  1. Capturar voz")
+        print("  2. Digitar texto")
+        print("  3. Status DOCA")
+        print("  4. Sair\n")
+        
+        while True:
+            escolha = input(">> ").strip().lower()
+            
+            if escolha in ("1", "voz"):
+                if SPEECH_AVAILABLE:
+                    self.processar()
+                else:
+                    print("[ERRO] Speech não disponível")
+            
+            elif escolha in ("2", "texto"):
+                texto = input("Texto: ").strip()
+                if texto:
+                    self.processar(texto)
+            
+            elif 
+# ============================================================================
+# MAIN
+# ============================================================================
+
+if __name__ == "__main__":
+    enclave = ENCLAVE()
+    enclave.iniciar()
